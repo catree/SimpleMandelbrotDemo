@@ -14,7 +14,6 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.text.DecimalFormat;
-import java.text.NumberFormat;
 import java.util.ArrayDeque;
 import java.util.Calendar;
 import java.util.Deque;
@@ -33,7 +32,6 @@ import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
 import javax.swing.SwingWorker;
-import javax.swing.text.NumberFormatter;
 
 import maths.Complex;
 
@@ -59,8 +57,19 @@ public class MandelbrotDemo extends JFrame {
 	protected int width  = 800;
 	protected int height = 800;
 	
-	protected int patchWidth = 10;
-	protected int patchHeight = 10;
+	protected int patchSizeIndex = 1;
+	protected int[][]  patchSize = new int[][]{
+			{5, 5},
+			{10, 10},
+			{25, 25},
+			{50, 50},
+			{100, 100}
+			};
+	
+	protected boolean isFixeSize = false;
+	protected int colorMethod = 1;
+	protected Color color = new Color(0, 0, 0);
+	protected int multithreadMethod = 1;
 	
 	protected BufferedImage renderImage = null;
 	protected Object lock = new Object();
@@ -71,18 +80,14 @@ public class MandelbrotDemo extends JFrame {
 	private JMenuBar menuBar;
 	private JMenu menu1;
 	private JMenu menu2;
-//	private JFormattedTextField renderWidthTextField;
-//	private JFormattedTextField renderHeightTextField;
 	
 	private MandelbrotDemo instance;
-	private NumberFormat format = NumberFormat.getInstance();
 	private boolean isComputing = false;
-	private int nbCores;
+	protected int nbCores = Runtime.getRuntime().availableProcessors();
+	protected int nbThreads = Runtime.getRuntime().availableProcessors();
 	
 	private Deque<double[]> stackOfZoom = null;
 	private Deque<BufferedImage> stackOfZoomImage = null;
-	
-	protected Color color = new Color(0, 0, 0);
 	
 	
 	public MandelbrotDemo() {
@@ -105,17 +110,6 @@ public class MandelbrotDemo extends JFrame {
 		
 		canvas = new Canvas();
 		
-	    NumberFormatter formatter = new NumberFormatter(format);
-	    formatter.setValueClass(Integer.class);
-	    formatter.setMinimum(50);
-	    formatter.setMaximum(100000);
-	    
-//		renderWidthTextField = new JFormattedTextField(formatter);
-//		renderWidthTextField.setColumns(5);
-//		
-//		renderHeightTextField = new JFormattedTextField(formatter);
-//		renderHeightTextField.setColumns(5);
-		
 		startButton = new JButton("Start !");
 		startButton.addActionListener(new ActionListener() {			
 			@Override
@@ -127,19 +121,16 @@ public class MandelbrotDemo extends JFrame {
 				}
 			}
 		});
-
-		nbCores = Runtime.getRuntime().availableProcessors();
-		infoTextField = new JTextField("nb cores : " + nbCores);
+		
+		infoTextField = new JTextField("nb threads : " + nbThreads);
 		infoTextField.setColumns(20);
 		infoTextField.setEditable(false);
 		
 		JPanel interactionPanel = new JPanel();
-//		interactionPanel.add(renderWidthTextField);
-//		interactionPanel.add(renderHeightTextField);
 		interactionPanel.add(startButton);
 		interactionPanel.add(infoTextField);
 		
-		menu1 = new JMenu("File");
+		menu1 = new JMenu("Option");
 		JMenuItem saveItem = new JMenuItem("Save Image");
 		saveItem.addActionListener(new ActionListener() {			
 			@Override
@@ -203,7 +194,7 @@ public class MandelbrotDemo extends JFrame {
         return max;
     }
     
-    public static int grayMandelbrotFormula(Complex z0, int maxIter) {
+    public static int greyMandelbrotFormula(Complex z0, int maxIter) {
     	return maxIter - MandelbrotDemo.mandelbrot(z0, maxIter);
     }
     
@@ -215,28 +206,28 @@ public class MandelbrotDemo extends JFrame {
     }
     
     public static Color blackAndWhiteMandelbrot(Complex z0, int maxIter) {
-    	int colorValue = MandelbrotDemo.grayMandelbrotFormula(z0, maxIter);
+    	int colorValue = MandelbrotDemo.greyMandelbrotFormula(z0, maxIter);
         return new Color(colorValue, colorValue, colorValue);
     }
     
-    public static Color grayMandelbrot(Complex z0, int maxIter) {
+    public static Color greyMandelbrot(Complex z0, int maxIter) {
     	int colorValue = MandelbrotDemo.colorMandelbrotFormula(z0, maxIter);
         return new Color(colorValue, colorValue, colorValue);
     }
     
-    public static Color redMandelbrot(Complex z0, int maxIter) {
+    public static Color redMandelbrot(Complex z0, int maxIter, Color c) {
     	int colorValue = MandelbrotDemo.colorMandelbrotFormula(z0, maxIter);
-        return new Color(colorValue, 0, 0);
+        return new Color(colorValue, c.getGreen(), c.getBlue());
     }
     
-    public static Color greenMandelbrot(Complex z0, int maxIter) {
+    public static Color greenMandelbrot(Complex z0, int maxIter, Color c) {
     	int colorValue = MandelbrotDemo.colorMandelbrotFormula(z0, maxIter);
-        return new Color(0, colorValue, 0);
+        return new Color(c.getRed(), colorValue, c.getBlue());
     }
     
-    public static Color blueMandelbrot(Complex z0, int maxIter) {
+    public static Color blueMandelbrot(Complex z0, int maxIter, Color c) {
     	int colorValue = MandelbrotDemo.colorMandelbrotFormula(z0, maxIter);
-        return new Color(0, 0, colorValue);
+        return new Color(c.getRed(), c.getGreen(), colorValue);
     }
     
     private void computeMandelbrot() {
@@ -246,66 +237,65 @@ public class MandelbrotDemo extends JFrame {
     	menu2.setEnabled(false);
     	setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
     	
-    	width  	= canvas.getWidth();
-    	height  = canvas.getHeight();
-    	
-//    	try {
-//    		width = (int) renderWidthTextField.getValue();
-//    		height = (int) renderHeightTextField.getValue();
-//    	} catch(NumberFormatException nfe) {
-//    	} catch(NullPointerException npe) {
-//    	}
+    	if(!isFixeSize) {
+        	width  	= canvas.getWidth();
+        	height  = canvas.getHeight();
+    	}
 		
     	zoomX 	= width / (x2 - x1);
     	zoomY 	= height / (y2 - y1);
     	
     	renderImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
     	
-    	multithread2();
+    	if(multithreadMethod == 0) {
+    		multithread0();
+    	} else {
+    		multithread1();
+    	}
     }
     
-    private void multithread1() {
+    private void multithread0() {
     	SwingWorker<Object, Object> sw = new SwingWorker<Object, Object>() {			
 			@Override
 			protected Object doInBackground() throws Exception {
 				long before = Calendar.getInstance().getTimeInMillis();
-				ExecutorService executor = Executors.newFixedThreadPool(nbCores);
+				ExecutorService executor = Executors.newFixedThreadPool(nbThreads);
 				
-				int sqrNbCores = (int) Math.sqrt(nbCores);
+				int sqrNbThreads = (int) Math.sqrt(nbThreads);
 				int stepI, stepJ;
 				
-				if(sqrNbCores*sqrNbCores == nbCores) {
-					stepI = (int) Math.floor(height / (double)sqrNbCores);
-					stepJ = (int) Math.floor(width / (double)sqrNbCores);
+				if(sqrNbThreads*sqrNbThreads == nbThreads) {
+					stepI = (int) Math.floor(height / (double) sqrNbThreads);
+					stepJ = (int) Math.floor(width / (double) sqrNbThreads);
 					
-					for(int i = 0; i<sqrNbCores; i++) {
-						for(int j = 0; j<sqrNbCores; j++) {
+					for(int i = 0; i<sqrNbThreads; i++) {
+						for(int j = 0; j<sqrNbThreads; j++) {
 							int startI 	 = stepI * i;
 							int endI	 = startI + stepI;
 							int startJ 	 = stepJ * j;
 							int endJ 	 = startJ + stepJ;
 							
-							if(j == sqrNbCores-1) {
+							if(j == sqrNbThreads - 1) {
 								endJ = width - 1;
 							}
-							if(i == sqrNbCores-1) {
+							if(i == sqrNbThreads - 1) {
 								endI = height - 1;
 							}
 							executor.submit(new RenderThread(instance, startI, endI, startJ, endJ));
 						}
 					}
-				} else if(nbCores % 2 == 0) {
+				} else if(nbThreads % 2 == 0) {
 					stepI = (int) Math.floor(height / 2.0);
-					stepJ = (int) Math.floor(width / (double)(nbCores/2));
+					stepJ = (int) Math.floor(width / (double)(nbThreads/2));
 					
 					for(int i = 0; i<2; i++) {
-						for(int j = 0; j<nbCores/2; j++) {
+						for(int j = 0; j<nbThreads/2; j++) {
 							int startI 	 = stepI * i;
 							int endI	 = startI + stepI;
 							int startJ 	 = stepJ * j;
 							int endJ 	 = startJ + stepJ;
 							
-							if(j == nbCores/2 - 1) {
+							if(j == nbThreads/2 - 1) {
 								endJ = width - 1;
 							}
 							if(i == 1) {
@@ -316,13 +306,13 @@ public class MandelbrotDemo extends JFrame {
 					}
 				} else {
 					stepI = height;
-					stepJ = (int) Math.floor(width / (double)nbCores);
+					stepJ = (int) Math.floor(width / (double)nbThreads);
 					
-					for(int j = 0; j<nbCores; j++) {
+					for(int j = 0; j<nbThreads; j++) {
 						int startJ 	 = stepJ * j;
 						int endJ 	 = startJ + stepJ;
 						
-						if(j == nbCores-1) {
+						if(j == nbThreads-1) {
 							endJ = width - 1;
 						}
 						executor.submit(new RenderThread(instance, 0, height, startJ, endJ));
@@ -342,7 +332,7 @@ public class MandelbrotDemo extends JFrame {
 				SwingUtilities.invokeLater(new Runnable() {					
 					@Override
 					public void run() {
-						infoTextField.setText("nb cores : " + nbCores + "  /  tps traitement : " + df.format(time) + " s");
+						infoTextField.setText("nb cores : " + nbThreads + "  /  tps traitement : " + df.format(time) + " s");
 					}
 				});
 		        
@@ -361,15 +351,17 @@ public class MandelbrotDemo extends JFrame {
     	sw.execute();
     }
     
-    private void multithread2() {
+    private void multithread1() {
     	SwingWorker<Object, Object> sw = new SwingWorker<Object, Object>() {			
 			@Override
 			protected Object doInBackground() throws Exception {
 				long before = Calendar.getInstance().getTimeInMillis();
-				ExecutorService executor = Executors.newFixedThreadPool(nbCores);
+				ExecutorService executor = Executors.newFixedThreadPool(nbThreads);
 				
 				int endI, endJ;
 				
+				int patchHeight = patchSize[patchSizeIndex][1];
+				int patchWidth = patchSize[patchSizeIndex][0];
 				for(int i = 0; i<height; i+=patchHeight) {
 					endI = i+patchHeight <= height ? i+patchHeight : height;
 					
@@ -392,7 +384,7 @@ public class MandelbrotDemo extends JFrame {
 				SwingUtilities.invokeLater(new Runnable() {					
 					@Override
 					public void run() {
-						infoTextField.setText("nb cores : " + nbCores + "  /  tps traitement : " + df.format(time) + " s");
+						infoTextField.setText("nb threads : " + nbThreads + "  /  tps traitement : " + df.format(time) + " s");
 					}
 				});
 		        
@@ -412,8 +404,8 @@ public class MandelbrotDemo extends JFrame {
     }
     
     public void setNbCores(int nb) {
-    	nbCores = nb;
-    	infoTextField.setText("nb cores : " + nbCores);
+    	nbThreads = nb;
+    	infoTextField.setText("nb cores : " + nbThreads);
     }
     
     private class Canvas extends JPanel {    	

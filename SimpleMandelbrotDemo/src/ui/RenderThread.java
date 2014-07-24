@@ -30,7 +30,28 @@ public class RenderThread implements Runnable {
                 double y0 = i / mandelbrot.zoomY + mandelbrot.y1;
                 
                 Complex z0 = new Complex(x0, y0);
-                Color color = MandelbrotDemo.blackAndWhiteMandelbrot(z0, mandelbrot.maxIteration);
+                Color color = new Color(0, 0, 0);
+                switch(mandelbrot.colorMethod) {
+                case 0:
+                	color = MandelbrotDemo.blackAndWhiteMandelbrot(z0, mandelbrot.maxIteration);
+                	break;
+                case 1:
+                	color = MandelbrotDemo.greyMandelbrot(z0, mandelbrot.maxIteration);
+                	break;
+                case 2:
+                	color = MandelbrotDemo.redMandelbrot(z0, mandelbrot.maxIteration, mandelbrot.color);
+                	break;
+                case 3:
+                	color = MandelbrotDemo.greenMandelbrot(z0, mandelbrot.maxIteration, mandelbrot.color);
+                	break;
+                case 4:
+                	color = MandelbrotDemo.blueMandelbrot(z0, mandelbrot.maxIteration, mandelbrot.color);
+                	break;
+            	default:
+            		color = MandelbrotDemo.blackAndWhiteMandelbrot(z0, mandelbrot.maxIteration);
+            		break;
+                }
+                
 //                int r = (color.getRed() + mandelbrot.color.getRed()) % 256;
 //                int g = (color.getGreen() + mandelbrot.color.getGreen()) % 256;
 //                int b = (color.getBlue() + mandelbrot.color.getBlue()) % 256;

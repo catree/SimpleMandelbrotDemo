@@ -8,7 +8,6 @@ import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
-import javax.swing.Box;
 import javax.swing.ButtonGroup;
 import javax.swing.JButton;
 import javax.swing.JColorChooser;
@@ -34,6 +33,7 @@ public class PropertiesDialog extends JDialog {
 	private JSlider nbCoresSlider;
 	
 	private JLabel colorLabel;
+	private JComboBox<String> colorComboBox;
 	private JColorChooser tcc;
 	
 	private JLabel patchSize;
@@ -74,50 +74,104 @@ public class PropertiesDialog extends JDialog {
 		JPanel centerPanel = new JPanel(new GridBagLayout());
 		sliderLabel = new JLabel("Nb threads :");
 		
-		int nbCores = Runtime.getRuntime().availableProcessors();
-		nbCoresSlider = new JSlider(1, 2 * nbCores, nbCores);
-		nbCoresSlider.setMajorTickSpacing(nbCores / 2 );
+		nbCoresSlider = new JSlider(1, 2 * mandelbrot.nbCores, mandelbrot.nbThreads);
+		nbCoresSlider.setMajorTickSpacing(mandelbrot.nbCores / 2 );
 		nbCoresSlider.setMinorTickSpacing(1);
 		nbCoresSlider.setPaintTicks(true);
 		nbCoresSlider.setPaintLabels(true);
 		
 		colorLabel = new JLabel("Color of the fractal :");
+		colorComboBox = new JComboBox<String>(new String[]{"Black & White", "Grey level", "Replace red channel", "Replace green channel", "Replace blue channel"});
+		colorComboBox.setSelectedIndex(mandelbrot.colorMethod);
+		colorComboBox.addActionListener(new ActionListener() {			
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				if(colorComboBox.getSelectedIndex() == 0 || colorComboBox.getSelectedIndex() == 1) {
+					tcc.setEnabled(false);
+				} else {
+					tcc.setEnabled(true);
+				}
+			}
+		});
 		
-		tcc = new JColorChooser();
+		tcc = new JColorChooser(mandelbrot.color);
 		tcc.removeChooserPanel(tcc.getChooserPanels()[0]);
 		tcc.removeChooserPanel(tcc.getChooserPanels()[0]);
 		tcc.removeChooserPanel(tcc.getChooserPanels()[0]);
 		tcc.removeChooserPanel(tcc.getChooserPanels()[1]);
 		tcc.setPreviewPanel(new JPanel());
+		tcc.setEnabled(mandelbrot.colorMethod != 0 && mandelbrot.colorMethod != 1);
 		
 		patchSize = new JLabel("Patch size :");
-		patchComboBox = new JComboBox<String>(new String[]{"5x5", "10x10", "25x25", "50x50"});
-		patchComboBox.setSelectedIndex(1);
+		patchComboBox = new JComboBox<String>();
+		for(int[] patch : mandelbrot.patchSize) {
+			patchComboBox.addItem(String.valueOf(patch[0]) + "x" + String.valueOf(patch[0]));
+		}
+		patchComboBox.setSelectedIndex(mandelbrot.patchSizeIndex);
 		
 		methodLabel = new JLabel("Multithreading method :");
 		methodComboBox = new JComboBox<String>(new String[]{"Regular subdivision", "Multi-patch subdivision"});
-		methodComboBox.setSelectedIndex(1);
+		methodComboBox.addActionListener(new ActionListener() {			
+			@Override
+			public void actionPerformed(ActionEvent arg0) {
+				if(methodComboBox.getSelectedIndex() == 0) {
+					patchComboBox.setEnabled(false);
+				} else {
+					patchComboBox.setEnabled(true);
+				}
+			}
+		});
+		methodComboBox.setSelectedIndex(mandelbrot.multithreadMethod);
 		
 		dynamicSizeRadioButton = new JRadioButton("Dynamic size");
-		dynamicSizeRadioButton.setSelected(true);
+		dynamicSizeRadioButton.setSelected(!mandelbrot.isFixeSize);
+		dynamicSizeRadioButton.addActionListener(new ActionListener() {			
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				widthSpinner.setEnabled(false);
+				heightSpinner.setEnabled(false);
+			}
+		});
+		
 		fixeSizeRadioButton = new JRadioButton("Fixe size");
+		fixeSizeRadioButton.setSelected(mandelbrot.isFixeSize);
+		fixeSizeRadioButton.addActionListener(new ActionListener() {			
+			@Override
+			public void actionPerformed(ActionEvent arg0) {
+				widthSpinner.setEnabled(true);
+				heightSpinner.setEnabled(true);
+			}
+		});
 		
 		buttonGroup = new ButtonGroup();
 		buttonGroup.add(dynamicSizeRadioButton);
 		buttonGroup.add(fixeSizeRadioButton);
-		JPanel radioPanel = new JPanel(new GridLayout(0, 1));
-		radioPanel.add(dynamicSizeRadioButton);
-		radioPanel.add(fixeSizeRadioButton);
+		JPanel gridPanel = new JPanel(new GridLayout(2, 2));
 		
 		widthLabel = new JLabel("Rendering width :");
 		heightLabel = new JLabel("Rendering height :");
 		
-		SpinnerModel model = new SpinnerNumberModel(1000, //initial value
+		SpinnerModel modelWidth = new SpinnerNumberModel(mandelbrot.width, //initial value
 		                               100, //min
 		                               10000, //max
-		                               50);  
-		widthSpinner = new JSpinner(model);
-		heightSpinner = new JSpinner(model);
+		                               50);
+		SpinnerModel modelHeight = new SpinnerNumberModel(mandelbrot.height, //initial value
+						                100, //min
+						                10000, //max
+						                50);
+		
+		widthSpinner = new JSpinner(modelWidth);
+		widthSpinner.setEnabled(!dynamicSizeRadioButton.isSelected());
+		
+		heightSpinner = new JSpinner(modelHeight);
+		heightSpinner.setEnabled(!dynamicSizeRadioButton.isSelected());
+		
+		gridPanel.add(dynamicSizeRadioButton);
+		gridPanel.add(widthLabel);
+		gridPanel.add(widthSpinner);
+		gridPanel.add(fixeSizeRadioButton);
+		gridPanel.add(heightLabel);
+		gridPanel.add(heightSpinner);
 		
 		GridBagConstraints c1 = new GridBagConstraints();
 		c1.gridx = 0;
@@ -143,6 +197,13 @@ public class PropertiesDialog extends JDialog {
 		c3.weighty = 0;
 		c3.anchor = GridBagConstraints.WEST;
 		c3.insets = new Insets(5, 10, 0, 5);
+		
+		GridBagConstraints c32 = new GridBagConstraints();
+		c32.gridx = 1;
+		c32.gridy = 1;
+		c32.gridwidth = 2;
+		c32.anchor = GridBagConstraints.CENTER;
+		c32.insets = new Insets(5, 10, 0, 5);
 		
 		GridBagConstraints c4 = new GridBagConstraints();
 		c4.gridx = 0;
@@ -187,84 +248,37 @@ public class PropertiesDialog extends JDialog {
 		GridBagConstraints c9 = new GridBagConstraints();
 		c9.gridx = 0;
 		c9.gridy = 9;
-		c9.gridwidth = 1;
+		c9.gridwidth = 4;
 		c9.gridheight = 2;
-		c9.weightx = 0;
+		c9.weightx = 50;
 		c9.weighty = 0;
-		c9.anchor = GridBagConstraints.EAST;
-		c9.insets = new Insets(20, 5, 5, 0);
-		
-		GridBagConstraints c10 = new GridBagConstraints();
-		c10.gridx = 1;
-		c10.gridy = 9;
-		c10.gridwidth = 2;
-		c10.gridheight = 2;
-		c10.weightx = 0;
-		c10.weighty = 0;
-		c10.anchor = GridBagConstraints.CENTER;
-		c10.insets = new Insets(5, 0, 5, 0);
-		
-		GridBagConstraints c11 = new GridBagConstraints();
-		c11.gridx = 3;
-		c11.gridy = 9;
-		c11.gridwidth = 1;
-		c11.gridheight = 2;
-		c11.weightx = 0;
-		c11.weighty = 0;
-		c11.anchor = GridBagConstraints.CENTER;
-		c11.insets = new Insets(5, 0, 5, 0);
-		
-		GridBagConstraints c12 = new GridBagConstraints();
-		c12.gridx = 1;
-		c12.gridy = 10;
-		c12.gridwidth = 2;
-		c12.gridheight = 2;
-		c12.weightx = 2;
-		c12.weighty = 2;
-		c12.anchor = GridBagConstraints.CENTER;
-		c12.insets = new Insets(5, 0, 5, 0);
-		
-		GridBagConstraints c13 = new GridBagConstraints();
-		c13.gridx = 3;
-		c13.gridy = 10;
-		c13.gridwidth = 1;
-		c13.gridheight = 2;
-		c13.weightx = 0;
-		c13.weighty = 0;
-		c13.anchor = GridBagConstraints.CENTER;
-		c13.insets = new Insets(5, 0, 5, 0);
-		
-		GridBagConstraints c14 = new GridBagConstraints();
-		c14.gridx = 4;
-		c14.gridy = 9;
-		c14.gridwidth = 2;
-		c14.gridheight = 1;
-		c14.weightx = 100;
-		c14.weighty = 0;
-		c14.fill = GridBagConstraints.BOTH;
-		c14.insets = new Insets(5, 5, 5, 5);
+		c9.anchor = GridBagConstraints.CENTER;
+		c9.insets = new Insets(10, 10, 10, 10);
 
 		centerPanel.add(sliderLabel, c1);
 		centerPanel.add(nbCoresSlider, c2);
 		centerPanel.add(colorLabel, c3);
+		centerPanel.add(colorComboBox, c32);
 		centerPanel.add(tcc, c4);
 		centerPanel.add(patchSize, c5);
 		centerPanel.add(patchComboBox, c6);
 		centerPanel.add(methodLabel, c7);
 		centerPanel.add(methodComboBox, c8);
-		centerPanel.add(radioPanel, c9);
-		centerPanel.add(widthLabel, c10);
-		centerPanel.add(widthSpinner, c11);
-		centerPanel.add(heightLabel, c12);
-		centerPanel.add(heightSpinner, c13);
-		centerPanel.add(Box.createHorizontalGlue(), c14);
+		centerPanel.add(gridPanel, c9);
+
 		
 		okButton = new JButton("Ok");
 		okButton.addActionListener(new ActionListener() {			
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				mandelbrot.setNbCores(nbCoresSlider.getValue());
+				mandelbrot.colorMethod = colorComboBox.getSelectedIndex();
 				mandelbrot.color = tcc.getColor();
+				mandelbrot.patchSizeIndex = patchComboBox.getSelectedIndex();
+				mandelbrot.multithreadMethod = methodComboBox.getSelectedIndex();
+				mandelbrot.isFixeSize = fixeSizeRadioButton.isSelected();
+				mandelbrot.width = (int) widthSpinner.getValue();
+				mandelbrot.height = (int) heightSpinner.getValue();				
 				dispose();
 			}
 		});

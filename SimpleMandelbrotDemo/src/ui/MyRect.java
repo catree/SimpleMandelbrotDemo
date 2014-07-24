@@ -20,17 +20,33 @@ public class MyRect {
 		this.y2 = y2;
 	}
 	
-	public void setSize(int x, int y) {
+	public void update(int x, int y) {
 		x2 = x;
 		y2 = y;
 	}
 	
 	public int getX() {
-		return Math.min(x1, x2);
+		return x1;
 	}
 	
 	public int getY() {
+		return y1;
+	}
+	
+	public int getLeftSide() {
+		return Math.min(x1, x2);
+	}
+	
+	public int getUpSide() {
 		return Math.min(y1, y2);
+	}
+	
+	public int getRightSide() {
+		return Math.max(x1, x2);
+	}
+	
+	public int getDownSide() {
+		return Math.max(y1, y2);
 	}
 	
 	public int getWidth() {

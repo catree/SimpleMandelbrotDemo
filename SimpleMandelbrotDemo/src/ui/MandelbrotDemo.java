@@ -59,6 +59,9 @@ public class MandelbrotDemo extends JFrame {
 	protected int width  = 800;
 	protected int height = 800;
 	
+	protected int patchWidth = 10;
+	protected int patchHeight = 10;
+	
 	protected BufferedImage renderImage = null;
 	protected Object lock = new Object();
 	
@@ -78,6 +81,8 @@ public class MandelbrotDemo extends JFrame {
 	
 	private Deque<double[]> stackOfZoom = null;
 	private Deque<BufferedImage> stackOfZoomImage = null;
+	
+	protected Color color = new Color(0, 0, 0);
 	
 	
 	public MandelbrotDemo() {
@@ -167,6 +172,13 @@ public class MandelbrotDemo extends JFrame {
 		});
 		
 		JMenuItem paramItem = new JMenuItem("Parameters");
+		paramItem.addActionListener(new ActionListener() {			
+			@Override
+			public void actionPerformed(ActionEvent arg0) {
+				new PropertiesDialog(instance);
+			}
+		});
+		
 		menu1.add(saveItem);
 		menu1.add(paramItem);
 		
@@ -191,39 +203,39 @@ public class MandelbrotDemo extends JFrame {
         return max;
     }
     
-    public static int grayMandelbrotFormula(Complex z0, int maxIteration) {
-    	return maxIteration - MandelbrotDemo.mandelbrot(z0, maxIteration);
+    public static int grayMandelbrotFormula(Complex z0, int maxIter) {
+    	return maxIter - MandelbrotDemo.mandelbrot(z0, maxIter);
     }
     
-    public static int colorMandelbrotFormula(Complex z0, int maxIteration) {
-    	if(maxIteration - MandelbrotDemo.mandelbrot(z0, maxIteration) == 0) {
-    		return maxIteration - MandelbrotDemo.mandelbrot(z0, maxIteration);
+    public static int colorMandelbrotFormula(Complex z0, int maxIter) {
+    	if(maxIter - MandelbrotDemo.mandelbrot(z0, maxIter) == 0) {
+    		return maxIter - MandelbrotDemo.mandelbrot(z0, maxIter);
     	}
-    	return MandelbrotDemo.mandelbrot(z0, maxIteration) * 255 / maxIteration;
+    	return MandelbrotDemo.mandelbrot(z0, maxIter) * 255 / maxIter;
     }
     
-    public static Color blackAndWhiteMandelbrot(Complex z0, int maxIteration) {
-    	int colorValue = MandelbrotDemo.grayMandelbrotFormula(z0, maxIteration);
+    public static Color blackAndWhiteMandelbrot(Complex z0, int maxIter) {
+    	int colorValue = MandelbrotDemo.grayMandelbrotFormula(z0, maxIter);
         return new Color(colorValue, colorValue, colorValue);
     }
     
-    public static Color grayMandelbrot(Complex z0, int maxIteration) {
-    	int colorValue = MandelbrotDemo.colorMandelbrotFormula(z0, maxIteration);
+    public static Color grayMandelbrot(Complex z0, int maxIter) {
+    	int colorValue = MandelbrotDemo.colorMandelbrotFormula(z0, maxIter);
         return new Color(colorValue, colorValue, colorValue);
     }
     
-    public static Color redMandelbrot(Complex z0, int maxIteration) {
-    	int colorValue = MandelbrotDemo.colorMandelbrotFormula(z0, maxIteration);
+    public static Color redMandelbrot(Complex z0, int maxIter) {
+    	int colorValue = MandelbrotDemo.colorMandelbrotFormula(z0, maxIter);
         return new Color(colorValue, 0, 0);
     }
     
-    public static Color greenMandelbrot(Complex z0, int maxIteration) {
-    	int colorValue = MandelbrotDemo.colorMandelbrotFormula(z0, maxIteration);
+    public static Color greenMandelbrot(Complex z0, int maxIter) {
+    	int colorValue = MandelbrotDemo.colorMandelbrotFormula(z0, maxIter);
         return new Color(0, colorValue, 0);
     }
     
-    public static Color blueMandelbrot(Complex z0, int maxIteration) {
-    	int colorValue = MandelbrotDemo.colorMandelbrotFormula(z0, maxIteration);
+    public static Color blueMandelbrot(Complex z0, int maxIter) {
+    	int colorValue = MandelbrotDemo.colorMandelbrotFormula(z0, maxIter);
         return new Color(0, 0, colorValue);
     }
     
@@ -249,6 +261,10 @@ public class MandelbrotDemo extends JFrame {
     	
     	renderImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
     	
+    	multithread2();
+    }
+    
+    private void multithread1() {
     	SwingWorker<Object, Object> sw = new SwingWorker<Object, Object>() {			
 			@Override
 			protected Object doInBackground() throws Exception {
@@ -342,7 +358,62 @@ public class MandelbrotDemo extends JFrame {
 				setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
 			}
 		};
-    	sw.execute();  	
+    	sw.execute();
+    }
+    
+    private void multithread2() {
+    	SwingWorker<Object, Object> sw = new SwingWorker<Object, Object>() {			
+			@Override
+			protected Object doInBackground() throws Exception {
+				long before = Calendar.getInstance().getTimeInMillis();
+				ExecutorService executor = Executors.newFixedThreadPool(nbCores);
+				
+				int endI, endJ;
+				
+				for(int i = 0; i<height; i+=patchHeight) {
+					endI = i+patchHeight <= height ? i+patchHeight : height;
+					
+					for(int j = 0; j<width; j+=patchWidth) {
+						endJ = j+patchWidth <= width ? j+patchWidth : width;
+						executor.submit(new RenderThread(instance, i, endI, j, endJ));
+					}					
+				}
+				
+				executor.shutdown();
+				try {
+					executor.awaitTermination(Long.MAX_VALUE,
+							TimeUnit.NANOSECONDS);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+				
+				final double time = (Calendar.getInstance().getTimeInMillis() - before) / 1000.0;
+				final DecimalFormat df = new DecimalFormat("#.###");
+				SwingUtilities.invokeLater(new Runnable() {					
+					@Override
+					public void run() {
+						infoTextField.setText("nb cores : " + nbCores + "  /  tps traitement : " + df.format(time) + " s");
+					}
+				});
+		        
+				return null;
+			}
+			
+			@Override
+			protected void done() {
+				startButton.setEnabled(true);
+		    	menu1.setEnabled(true);
+		    	menu2.setEnabled(true);
+				isComputing = false;
+				setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
+			}
+		};
+    	sw.execute();
+    }
+    
+    public void setNbCores(int nb) {
+    	nbCores = nb;
+    	infoTextField.setText("nb cores : " + nbCores);
     }
     
     private class Canvas extends JPanel {    	
@@ -360,18 +431,19 @@ public class MandelbrotDemo extends JFrame {
 				public void mouseReleased(MouseEvent e) {
 					if(null != renderImage && !isComputing && mouseDragged) {
 						renderImage = null;
-						
+
+						updateSize(e);
 						if(currentRect.isZooming()) {
-							int x = e.getX();
-				            int y = e.getY();
 				            
 				        	zoomX 	= width / (x2 - x1);
 				        	zoomY 	= height / (y2 - y1);
 				            
-							x1 = currentRect.getX() / zoomX + x1;
-							x2 = x / zoomX + x1;
-							y1 = currentRect.getY() / zoomY + y1;
-							y2 = y / zoomY + y1;
+				        	double oldX1 = x1, oldY1 = y1;
+				        	
+							x1 = (currentRect.getLeftSide() * width / getWidth()) / zoomX + oldX1;
+							x2 = (currentRect.getRightSide() * width / getWidth()) / zoomX + oldX1;
+							y1 = (currentRect.getUpSide() * height / getHeight()) / zoomY + oldY1;
+							y2 = (currentRect.getDownSide() * height / getHeight()) / zoomY + oldY1;
 							
 							stackOfZoom.add(new double[]{x1, y1, x2, y2});
 							
@@ -391,11 +463,6 @@ public class MandelbrotDemo extends JFrame {
 								renderImage = stackOfZoomImage.getLast();
 							}							
 						}
-						
-//						System.out.println("x1=" + x1);
-//						System.out.println("x2=" + x2);
-//						System.out.println("y1=" + y1);
-//						System.out.println("y2=" + y2);
 					}
 					
 					currentRect = null;
@@ -440,7 +507,7 @@ public class MandelbrotDemo extends JFrame {
 		void updateSize(MouseEvent e) {
             int x = e.getX();
             int y = e.getY();
-            currentRect.setSize(x, y);
+            currentRect.update(x, y);
             repaint();
         }
 
@@ -449,12 +516,14 @@ public class MandelbrotDemo extends JFrame {
     		super.paintComponent(g);
     		Graphics2D g2 = (Graphics2D) g;
     		
-    		if(null != renderImage) {
-    			g2.drawImage(renderImage, 0, 0, getWidth(), getHeight(), this);
+    		synchronized (lock) {
+	    		if(null != renderImage) {
+	    			g2.drawImage(renderImage, 0, 0, getWidth(), getHeight(), this);
+	    		}
     		}
     		
     		if(null != currentRect) {
-    			g2.drawRect(currentRect.getX(), currentRect.getY(), currentRect.getWidth(), currentRect.getHeight());
+    			g2.drawRect(currentRect.getLeftSide(), currentRect.getUpSide(), currentRect.getWidth(), currentRect.getHeight());
     		}
     	}
     }

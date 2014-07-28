@@ -384,7 +384,7 @@ public class MandelbrotDemo extends JFrame {
     protected long multithread2(boolean isBenchmarking) {
         long before = System.currentTimeMillis();
     	ForkMandelbrot fm = new ForkMandelbrot(instance, 0, width * height, isBenchmarking);    	 
-        ForkJoinPool pool = new ForkJoinPool();
+        ForkJoinPool pool = new ForkJoinPool(nbThreads);
  
         pool.invoke(fm);
         long after = System.currentTimeMillis();

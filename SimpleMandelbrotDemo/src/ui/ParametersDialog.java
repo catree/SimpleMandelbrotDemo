@@ -36,7 +36,7 @@ public class ParametersDialog extends JDialog {
 	private static final long serialVersionUID = 1L;
 	
 	private JLabel sliderLabel;
-	private JSlider nbCoresSlider;
+	private JSlider nbThreadsSlider;
 	
 	private JLabel colorLabel;
 	private JComboBox<String> colorComboBox;
@@ -94,11 +94,11 @@ public class ParametersDialog extends JDialog {
 		JPanel centerPanel = new JPanel(new GridBagLayout());
 		sliderLabel = new JLabel("Nb threads :");
 		
-		nbCoresSlider = new JSlider(1, 2 * mandelbrot.nbCores, mandelbrot.nbThreads);
-		nbCoresSlider.setMajorTickSpacing(mandelbrot.nbCores / 2 );
-		nbCoresSlider.setMinorTickSpacing(1);
-		nbCoresSlider.setPaintTicks(true);
-		nbCoresSlider.setPaintLabels(true);
+		nbThreadsSlider = new JSlider(1, 2 * mandelbrot.nbCores, mandelbrot.nbThreads);
+		nbThreadsSlider.setMajorTickSpacing(mandelbrot.nbCores / 2 );
+		nbThreadsSlider.setMinorTickSpacing(1);
+		nbThreadsSlider.setPaintTicks(true);
+		nbThreadsSlider.setPaintLabels(true);
 		
 		colorLabel = new JLabel("Color of the fractal :");
 		colorComboBox = new JComboBox<String>(new String[]{"Black & White", "Grey level", "Replace red channel", "Replace green channel", "Replace blue channel"});
@@ -424,7 +424,7 @@ public class ParametersDialog extends JDialog {
 		c10.insets = new Insets(5, 10, 10, 10);
 
 		centerPanel.add(sliderLabel, c1);
-		centerPanel.add(nbCoresSlider, c2);
+		centerPanel.add(nbThreadsSlider, c2);
 		centerPanel.add(colorLabel, c3);
 		centerPanel.add(colorComboBox, c32);
 		centerPanel.add(tcc, c4);
@@ -442,7 +442,7 @@ public class ParametersDialog extends JDialog {
 		okButton.addActionListener(new ActionListener() {			
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				mandelbrot.setNbCores(nbCoresSlider.getValue());
+				mandelbrot.setNbCores(nbThreadsSlider.getValue());
 				
 				mandelbrot.colorMethod = colorComboBox.getSelectedIndex();
 				mandelbrot.color = tcc.getColor();

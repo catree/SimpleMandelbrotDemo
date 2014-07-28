@@ -4,8 +4,11 @@ import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
 
 import javax.swing.JButton;
+import javax.swing.JComboBox;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -39,6 +42,9 @@ public class BenchmarkDialog extends JDialog {
 	private JSpinner nbRunSpinner;
 	private JButton okButton;
 	private JButton cancelButton;
+	private JLabel nbThreadLabel;
+	private JComboBox<Integer> nbThreadComboBox;
+	private JComboBox<String> multithreadMethodComboBox;
 	
 	private int nbRun = 0;
 	private long totalTime = 0;
@@ -52,7 +58,7 @@ public class BenchmarkDialog extends JDialog {
 		mandelbrot = (MandelbrotDemo) parent;
 		initComponents();
 		
-		setMinimumSize(new Dimension(500, 400));
+		setMinimumSize(new Dimension(550, 400));
 		setLocationRelativeTo(parent);
 		setVisible(true);
 	}
@@ -72,12 +78,25 @@ public class BenchmarkDialog extends JDialog {
                 5); //step
 		nbRunSpinner = new JSpinner(nbRunModel);
 		
+		nbThreadLabel = new JLabel("Nb threads :");
+		nbThreadComboBox = new JComboBox<Integer>();
+		for(int i = 1; i <= 2 * mandelbrot.nbCores; i++) {
+			nbThreadComboBox.addItem(new Integer(i));
+		}
+		nbThreadComboBox.setSelectedIndex(mandelbrot.nbThreads - 1);
+		
+		multithreadMethodComboBox = new JComboBox<String>(METHOD_NAME);
+
+		
 		okButton = new JButton("Ok");
 		okButton.addActionListener(new ActionListener() {			
 			@Override
 			public void actionPerformed(ActionEvent arg0) {
 				okButton.setEnabled(false);
 				cancelButton.setEnabled(false);
+				nbRunSpinner.setEnabled(false);
+				nbThreadComboBox.setEnabled(false);
+				multithreadMethodComboBox.setEnabled(false);
 				setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
 				
 				mandelbrot.zoomX = mandelbrot.width / (mandelbrot.x2 - mandelbrot.x1);
@@ -85,9 +104,15 @@ public class BenchmarkDialog extends JDialog {
 				mandelbrot.imageArray = new int[mandelbrot.width * mandelbrot.height];
 				
 				nbRun = (int) nbRunSpinner.getValue();
-				textArea.append("BENCHMARK :" + System.lineSeparator());
-				textArea.append("Method : " + BenchmarkDialog.METHOD_NAME[mandelbrot.multithreadMethod] + System.lineSeparator());
+				SimpleDateFormat sdf = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
+				textArea.append("BENCHMARK at " + sdf.format(Calendar.getInstance().getTime()) + System.lineSeparator());
 				textArea.append("Image size=" + mandelbrot.width + "x" + mandelbrot.height + System.lineSeparator());
+				textArea.append("Nb threads=" + nbThreadComboBox.getSelectedItem() + System.lineSeparator());
+				textArea.append("Method : " + multithreadMethodComboBox.getSelectedItem() + System.lineSeparator());
+				if(multithreadMethodComboBox.getSelectedIndex() == 1) {
+					textArea.append("Patch size=" + mandelbrot.patchSize[mandelbrot.patchSizeIndex][0] + "x" + 
+							mandelbrot.patchSize[mandelbrot.patchSizeIndex][1]+ System.lineSeparator());
+				}				
 				
 				SwingWorker<Object, Object> sw = new SwingWorker<Object, Object>() {
 					@Override
@@ -101,6 +126,9 @@ public class BenchmarkDialog extends JDialog {
 					protected void done() {
 						okButton.setEnabled(true);
 						cancelButton.setEnabled(true);
+						nbRunSpinner.setEnabled(true);
+						nbThreadComboBox.setEnabled(true);
+						multithreadMethodComboBox.setEnabled(true);
 						setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
 					}
 				};
@@ -121,6 +149,9 @@ public class BenchmarkDialog extends JDialog {
 		interactionPanel.add(cancelButton);
 		interactionPanel.add(nbRunLabel);
 		interactionPanel.add(nbRunSpinner);
+		interactionPanel.add(nbThreadLabel);
+		interactionPanel.add(nbThreadComboBox);
+		interactionPanel.add(multithreadMethodComboBox);
 
 		add("Center", scrollPane);
 		add("South", interactionPanel);
@@ -128,7 +159,10 @@ public class BenchmarkDialog extends JDialog {
 	
 	private void runBenchmark() {
 		totalTime = 0;
-		switch(mandelbrot.multithreadMethod) {
+		int saveNbThreads = mandelbrot.nbThreads;
+		mandelbrot.nbThreads = (int) nbThreadComboBox.getSelectedItem();
+		
+		switch(multithreadMethodComboBox.getSelectedIndex()) {
 		case 0:
 		{
 			for(int cpt = 0; cpt<nbRun; cpt++) {
@@ -142,7 +176,7 @@ public class BenchmarkDialog extends JDialog {
 				@Override
 				public void run() {
 					textArea.append("Total time=" + totalTimeSecond + " s ; Average time=" + averageTimeSecond + " s");
-					textArea.append(System.lineSeparator() + System.lineSeparator());
+					textArea.append(System.lineSeparator() + System.lineSeparator() + System.lineSeparator());
 				}
 			});
 		}
@@ -161,7 +195,7 @@ public class BenchmarkDialog extends JDialog {
 				@Override
 				public void run() {
 					textArea.append("Total time=" + totalTimeSecond + " s ; Average time=" + averageTimeSecond + " s");
-					textArea.append(System.lineSeparator() + System.lineSeparator());
+					textArea.append(System.lineSeparator() + System.lineSeparator() + System.lineSeparator());
 				}
 			});
 		}
@@ -180,7 +214,7 @@ public class BenchmarkDialog extends JDialog {
 				@Override
 				public void run() {
 					textArea.append("Total time=" + totalTimeSecond + " s ; Average time=" + averageTimeSecond + " s");
-					textArea.append(System.lineSeparator() + System.lineSeparator());
+					textArea.append(System.lineSeparator() + System.lineSeparator() + System.lineSeparator());
 				}
 			});
 		}
@@ -189,5 +223,7 @@ public class BenchmarkDialog extends JDialog {
 		default :
 			break;
 		}
+
+		mandelbrot.nbThreads = saveNbThreads;
 	}
 }

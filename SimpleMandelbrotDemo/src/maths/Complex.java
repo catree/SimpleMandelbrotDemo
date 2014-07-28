@@ -17,6 +17,11 @@ package maths;
  * 
  *************************************************************************/
 
+/**
+ * 
+ * @see http://introcs.cs.princeton.edu/java/32class/Complex.java.html
+ *
+ */
 public class Complex {
 	private final double re; // the real part
 	private final double im; // the imaginary part

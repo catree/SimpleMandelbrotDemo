@@ -3,8 +3,14 @@ package ui;
 import java.awt.Color;
 
 import maths.Complex;
+import maths.Mandelbrot;
 
 
+/**
+ * 
+ * @author Catree
+ *
+ */
 public class RenderThread implements Runnable {
 
 	private MandelbrotDemo mandelbrot;
@@ -12,14 +18,16 @@ public class RenderThread implements Runnable {
 	private int endI;
 	private int startJ;
 	private int endJ;
+	private boolean isBenchmarking;
 	
 	
-	public RenderThread(MandelbrotDemo mandelbrot, int startI, int endI, int startJ, int endJ) {
+	public RenderThread(MandelbrotDemo mandelbrot, int startI, int endI, int startJ, int endJ, boolean isBenchmarking) {
 		this.mandelbrot = mandelbrot;
-		this.startI 	= startI;
-		this.endI 		= endI;
-		this.startJ 	= startJ;
-		this.endJ 		= endJ;
+		this.startI = startI;
+		this.endI = endI;
+		this.startJ = startJ;
+		this.endJ = endJ;
+		this.isBenchmarking = isBenchmarking;
 	}
 
 	@Override
@@ -33,34 +41,37 @@ public class RenderThread implements Runnable {
                 Color color = new Color(0, 0, 0);
                 switch(mandelbrot.colorMethod) {
                 case 0:
-                	color = MandelbrotDemo.blackAndWhiteMandelbrot(z0, mandelbrot.maxIteration);
+                	color = Mandelbrot.blackAndWhiteMandelbrot(z0, mandelbrot.maxIteration);
                 	break;
                 case 1:
-                	color = MandelbrotDemo.greyMandelbrot(z0, mandelbrot.maxIteration);
+                	color = Mandelbrot.greyMandelbrot(z0, mandelbrot.maxIteration);
                 	break;
                 case 2:
-                	color = MandelbrotDemo.redMandelbrot(z0, mandelbrot.maxIteration, mandelbrot.color);
+                	color = Mandelbrot.redMandelbrot(z0, mandelbrot.maxIteration, mandelbrot.color);
                 	break;
                 case 3:
-                	color = MandelbrotDemo.greenMandelbrot(z0, mandelbrot.maxIteration, mandelbrot.color);
+                	color = Mandelbrot.greenMandelbrot(z0, mandelbrot.maxIteration, mandelbrot.color);
                 	break;
                 case 4:
-                	color = MandelbrotDemo.blueMandelbrot(z0, mandelbrot.maxIteration, mandelbrot.color);
+                	color = Mandelbrot.blueMandelbrot(z0, mandelbrot.maxIteration, mandelbrot.color);
                 	break;
             	default:
-            		color = MandelbrotDemo.blackAndWhiteMandelbrot(z0, mandelbrot.maxIteration);
+            		color = Mandelbrot.blackAndWhiteMandelbrot(z0, mandelbrot.maxIteration);
             		break;
                 }
                 
-//                int r = (color.getRed() + mandelbrot.color.getRed()) % 256;
-//                int g = (color.getGreen() + mandelbrot.color.getGreen()) % 256;
-//                int b = (color.getBlue() + mandelbrot.color.getBlue()) % 256;
-//                Color c = new Color(r, g, b);
-                synchronized (mandelbrot.lock) {
-                	mandelbrot.renderImage.setRGB(j, i, color.getRGB());
-				}
+                if(!isBenchmarking && mandelbrot.isLiveRendering) {
+                    synchronized (mandelbrot.lock) {
+                    	mandelbrot.renderImage.setRGB(j, i, color.getRGB());
+    				}
+                } else {
+                	mandelbrot.imageArray[i * mandelbrot.width + j] = color.getRGB();
+                }
             }
-            mandelbrot.repaint();
+            
+            if(!isBenchmarking && mandelbrot.isLiveRendering) {
+            	mandelbrot.repaint();
+            }            
         }
 	}
 

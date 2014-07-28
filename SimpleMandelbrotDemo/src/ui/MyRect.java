@@ -1,5 +1,11 @@
 package ui;
 
+
+/**
+ * 
+ * @author Catree
+ *
+ */
 public class MyRect {
 	
 	private int x1 = -1;

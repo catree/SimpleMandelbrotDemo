@@ -96,7 +96,7 @@ public class MandelbrotDemo extends JFrame {
 	
 	
 	public MandelbrotDemo() {
-		super("SimpleMandelbrotDemo");
+		super("SimpleMandelbrotDemo by Catree");
 		
 		instance = this;
 		stackOfZoomImage = new ArrayDeque<BufferedImage>();

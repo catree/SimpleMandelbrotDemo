@@ -3,7 +3,8 @@ SimpleMandelbrotDemo
 
 ## Goal of this project
 SimpleMandelbrotDemo is a project I started as a training project to practice Java programming and to learn different concepts (multithreading, Swing gui) with a problematic of my choice.  
-At the time of writing, mostly all the features I wanted to implement is coded with some basic tests executed. Further improvement, bug correction or fully advanced tests may / will be added / done.
+At the time of writing, mostly all the features I wanted to implement is coded with some basic tests executed. Further improvement, bug correction or fully advanced tests may / will be added / done.  
+As a non professional project, I recommend to be very careful if you want to reuse some parts of code. Feel free to transmit me some bugs or possible improvements.
 
 ## Overview
 ### Quick description

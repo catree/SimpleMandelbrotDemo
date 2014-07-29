@@ -3,8 +3,9 @@ SimpleMandelbrotDemo
 
 ## Goal of this project
 SimpleMandelbrotDemo is a project I started as a training project to practice Java programming and to learn different concepts (multithreading, Swing gui) with a problematic of my choice.  
-At the time of writing, mostly all the features I wanted to implement is coded with some basic tests executed. Further improvement, bug correction or fully advanced tests may / will be added / done.  
-As a non professional project, I recommend to be very careful if you want to reuse some parts of code. Feel free to transmit me some bugs or possible improvements.
+At the time of writing, mostly all the features I wanted to implement is coded with some basic tests executed. Further improvement, bug correction or fully advanced tests may or may not be done if I don't have time or the desire.  
+As a non professional project, I recommend to be very careful if you want to reuse some parts of code. The code and the methods used are not optimal but I hope this project could help someone.  
+Feel free to transmit me some bugs or possible improvements.
 
 ## Overview
 ### Quick description
@@ -34,7 +35,7 @@ To implement this condition for our computers (quote from [Introduction to Progr
 > Remarkably, there is a test that tells us for sure that a point is not in the set: if the magnitude of any number in the sequence ever gets to be greater than 2 (like 3 + 0i), then the sequence will surely diverge.  
 
 In Java now :
-'''Java
+```Java
 public static int mand(Complex z0, int maxIteration) { 
    Complex z = z0; 
    for (int t = 0; t < maxIteration; t++) { 
@@ -43,7 +44,7 @@ public static int mand(Complex z0, int maxIteration) {
    }   
    return maxIteration; 
 } 
-'''
+```
 
 ### Rendering colors
 I use a basic method to display the fractal in color :

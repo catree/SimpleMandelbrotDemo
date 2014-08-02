@@ -68,12 +68,14 @@ One lock object is used, we request the lock before writing in the BufferedImage
 With this method, we divide the image by the number of chosen threads, each thread will compute the rendering for a part of the final image.  
 The same mechanism of synch is used than in the case of live single thread rendering.  
 For example in case of a number of threads :
-![alt text](https://github.com/catree/SimpleMandelbrotDemo/blob/master/SimpleMandelbrotDemo/MandelbrotThread1.png "Regular subdivision, perfect square number of threads")
 - perfectly square (4, 9, 16, etc.) : we divide the width and the height by the square root of the number of threads
-![alt text](https://github.com/catree/SimpleMandelbrotDemo/blob/master/SimpleMandelbrotDemo/MandelbrotThread2.png "Regular subdivision, even number of threads")
+![alt text](https://github.com/catree/SimpleMandelbrotDemo/blob/master/SimpleMandelbrotDemo/MandelbrotThread1.png "Regular subdivision, perfect square number of threads")  
+
 - even : we divide the height by two and we divide the width by half the number of threads
-![alt text](https://github.com/catree/SimpleMandelbrotDemo/blob/master/SimpleMandelbrotDemo/MandelbrotThread3.png "Regular subdivision, odd number of threads")
+![alt text](https://github.com/catree/SimpleMandelbrotDemo/blob/master/SimpleMandelbrotDemo/MandelbrotThread2.png "Regular subdivision, even number of threads")  
+
 - odd : we divide the width by the number of threads  
+![alt text](https://github.com/catree/SimpleMandelbrotDemo/blob/master/SimpleMandelbrotDemo/MandelbrotThread3.png "Regular subdivision, odd number of threads")  
  
  This method of rendering is obviously better than using a single thread but when we experiment we realize that some threads finish their tasks faster than others. 
  This is particularly the case in black areas where pixels does't belong to the Mandelbrot set.  

@@ -106,6 +106,8 @@ The gap could be negligible if we do not compare the processing time.
 ![alt text](https://github.com/catree/SimpleMandelbrotDemo/blob/master/SimpleMandelbrotDemo/SimpleMandelbrotDemo.png "Main interface")
 - (1) Start button to launch the computation and display the fractal
 - (2) Display the number of chosen threads to do the calculation and the processing time
+- draw a rectangle selection (drag with left mouse click) from left to right : zoom on a specific area corresponding to the rectangle selection
+- draw a rectangle selection  (drag with left mouse click) from right to left : load the previous Mandelbrot image before the zooming 
 - Option menu > Save image : save the image on disk
 - Option menu > Parameters : open a dialog to configure the different parameters
 - Option menu > Benchmark : open a dialog to run multiple times the calculation to compare the impact of the different parameters

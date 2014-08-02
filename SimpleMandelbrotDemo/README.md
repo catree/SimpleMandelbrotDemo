@@ -1,4 +1,4 @@
-SimpleMandelbrotDemo
+Simple Mandelbrot Demo
 ====================
 
 ## Goal of this project

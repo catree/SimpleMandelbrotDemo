@@ -59,7 +59,7 @@ public class RenderThread implements Runnable {
             		color = Mandelbrot.blackAndWhiteMandelbrot(z0, mandelbrot.maxIteration);
             		break;
                 }
-                
+
                 if(!isBenchmarking && mandelbrot.isLiveRendering) {
                     synchronized (mandelbrot.lock) {
                     	mandelbrot.renderImage.setRGB(j, i, color.getRGB());

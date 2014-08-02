@@ -78,7 +78,7 @@ public class ParametersDialog extends JDialog {
 	
 	
 	public ParametersDialog(JFrame parent) {
-		super(parent, "Properties", true);
+		super(parent, "Parameters", true);
 		
 		mandelbrot = (MandelbrotDemo) parent;
 		initComponents();

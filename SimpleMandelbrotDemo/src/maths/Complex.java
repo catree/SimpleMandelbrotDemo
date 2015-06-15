@@ -48,6 +48,7 @@ public class Complex {
 //		return Math.hypot(re, im);
 		//Faster to use Math.sqrt() than Math.hypot()
 		//@see: https://stackoverflow.com/questions/3764978/why-hypot-function-is-so-slow/3764993#3764993
+		return Math.sqrt(re*re + im*im);
 	} // Math.sqrt(re*re + im*im)
 
 	public double phase() {

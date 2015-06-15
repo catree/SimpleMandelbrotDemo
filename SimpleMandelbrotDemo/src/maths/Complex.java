@@ -45,7 +45,9 @@ public class Complex {
 
 	// return abs/modulus/magnitude and angle/phase/argument
 	public double abs() {
-		return Math.hypot(re, im);
+//		return Math.hypot(re, im);
+		//Faster to use Math.sqrt() than Math.hypot()
+		//@see: https://stackoverflow.com/questions/3764978/why-hypot-function-is-so-slow/3764993#3764993
 	} // Math.sqrt(re*re + im*im)
 
 	public double phase() {

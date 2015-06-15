@@ -61,9 +61,11 @@ public class RenderThread implements Runnable {
                 }
 
                 if(!isBenchmarking && mandelbrot.isLiveRendering) {
-                    synchronized (mandelbrot.lock) {
+					//Not needed as setRGB is already synchronized
+                	//@see: http://hg.openjdk.java.net/jdk7/jdk7/jdk/file/9b8c96f96a0f/src/share/classes/java/awt/image/BufferedImage.java#l987
+                    //synchronized (mandelbrot.lock) {
                     	mandelbrot.renderImage.setRGB(j, i, color.getRGB());
-    				}
+    				//}
                 } else {
                 	mandelbrot.imageArray[i * mandelbrot.width + j] = color.getRGB();
                 }

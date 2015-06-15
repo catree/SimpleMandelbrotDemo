@@ -65,10 +65,7 @@ public class ForkMandelbrot extends RecursiveAction {
 			}
 
 			if (!isBenchmarking && mandelbrot.isLiveRendering) {
-				synchronized (mandelbrot.lock) {
-					mandelbrot.renderImage.setRGB(j, i, color.getRGB());
-				}
-				
+				mandelbrot.renderImage.setRGB(j, i, color.getRGB());
 				mandelbrot.repaint();
 			} else {
 				mandelbrot.imageArray[i * mandelbrot.width + j] = color.getRGB();
